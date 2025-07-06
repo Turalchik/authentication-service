@@ -17,7 +17,8 @@ func NewHttpHandler(authService AuthService) *HttpHandler {
 		router:      router,
 	}
 
-	router.HandleFunc("/api/v1/auth/tokens?user_id={GUID}", httpHandler.CreateTokens).Methods(http.MethodPost)
+	router.HandleFunc("/api/v1/auth/tokens?user_id={GUID}", httpHandler.CreateTokens).Methods(http.MethodGet)
+	router.HandleFunc("/api/v1/auth/tokens/refresh", httpHandler.UpdateTokens).Methods(http.MethodPost)
 
 	return httpHandler
 }

@@ -14,5 +14,5 @@ var (
 	ErrInvalidToken      = errors.New("invalid token")
 	ErrCantGetSession    = errors.New("can't get session")
 	ErrCantDeleteSession = errors.New("can't delete session")
-	ErrCantUpdateTokens  = errors.New("can't update tokens")
+	ErrTokensDontMatch   = errors.New("tokens don't match")
 )

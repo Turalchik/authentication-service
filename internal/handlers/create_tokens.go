@@ -12,13 +12,16 @@ func (authHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	accessToken, refreshToken, err := authHandler.authService.CreateTokens(userID)
+	userAgent := req.UserAgent()
+	ipAddr, _ := getIP(req)
+
+	accessToken, refreshToken, err := authHandler.authService.CreateTokens(userID, userAgent, ipAddr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	resp := createTokensBody{
+	resp := tokensBody{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
@@ -33,7 +36,7 @@ func (authHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 	}
 }
 
-type createTokensBody struct {
+type tokensBody struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }

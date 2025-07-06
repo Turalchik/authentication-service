@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (authService *AuthService) CreateTokens(userID string, userAgent string, userIP string) (string, string, error) {
+func (authService *AuthService) CreateTokens(userID string, userAgent string, ipAddr string) (string, string, error) {
 	if userID == "" {
 		return "", "", apperrors.ErrInvalidUserID
 	}
@@ -43,7 +43,7 @@ func (authService *AuthService) CreateTokens(userID string, userAgent string, us
 			UserID:           userID,
 			RefreshTokenHash: refreshTokenHash,
 			UserAgent:        userAgent,
-			IssuedIP:         userIP,
+			IPAddr:           ipAddr,
 		}
 		err = authService.repo.CreateSession(newSession)
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func (authService *AuthService) UpdateTokens(accessToken string, userAgent string, userIP string) (string, string, error) {
+func (authService *AuthService) UpdateTokens(accessToken string, refreshToken string, userAgent string, ipAddr string) (string, string, error) {
 	// извлечь claims из access token
 	claims, err := claimsFromAccessToken(accessToken, authService.jwtSecretKey)
 	if err != nil {
@@ -24,6 +24,11 @@ func (authService *AuthService) UpdateTokens(accessToken string, userAgent strin
 		return "", "", apperrors.ErrCantGetSession
 	}
 
+	// проверяем на соответствие refresh токены
+	if bcrypt.CompareHashAndPassword(session.RefreshTokenHash, []byte(refreshToken)) != nil {
+		return "", "", apperrors.ErrTokensDontMatch
+	}
+
 	// проверить userAgent
 	if userAgent != session.UserAgent {
 		if err = authService.repo.DeleteSessionByUserID(claims.UserID); err != nil {
@@ -35,9 +40,9 @@ func (authService *AuthService) UpdateTokens(accessToken string, userAgent strin
 	}
 
 	// проверить userIP
-	if userIP != session.IssuedIP {
+	if ipAddr != session.IPAddr {
 		go func() {
-			_, err := notifyWebhook(claims.UserID, session.IssuedIP, userIP, authService.webhookURL)
+			_, err := notifyWebhook(claims.UserID, session.IPAddr, ipAddr, authService.webhookURL)
 			if err != nil {
 				log.Printf("can't notify webhook with error: %s\n", err.Error())
 			}
