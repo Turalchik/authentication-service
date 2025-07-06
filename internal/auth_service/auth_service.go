@@ -8,5 +8,14 @@ type AuthService struct {
 	ttlAccessToken time.Duration
 
 	jwtSecretKey []byte
-	webHookURL   string
+	webhookURL   string
+}
+
+func NewAuthService(repo Repo, ttlAccessToken time.Duration, jwtSecretKey []byte, webhookURL string) *AuthService {
+	return &AuthService{
+		repo:           repo,
+		ttlAccessToken: ttlAccessToken,
+		jwtSecretKey:   jwtSecretKey,
+		webhookURL:     webhookURL,
+	}
 }

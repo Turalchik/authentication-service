@@ -19,7 +19,7 @@ func (authService *AuthService) CreateTokens(userID string, userAgent string, us
 	}
 
 	// case when the user does not have a token yet
-	if errors.Is(sql.ErrNoRows, err) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// создаем токены (access и refresh)
 		accessToken, err := makeJWT(userID, authService.ttlAccessToken, authService.jwtSecretKey)
 		if err != nil {

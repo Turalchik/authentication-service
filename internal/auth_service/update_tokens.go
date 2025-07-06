@@ -4,23 +4,65 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/Turalchik/authentication-service/internal/apperrors"
+	"golang.org/x/crypto/bcrypt"
+	"log"
 )
 
-func (authService *AuthService) UpdateTokens(userID string, userAgent string, userIP string) (string, string, error) {
-	if userID == "" {
-		return "", "", apperrors.ErrInvalidUserID
+func (authService *AuthService) UpdateTokens(accessToken string, userAgent string, userIP string) (string, string, error) {
+	// извлечь claims из access token
+	claims, err := claimsFromAccessToken(accessToken, authService.jwtSecretKey)
+	if err != nil {
+		return "", "", err
 	}
 
-	session, err := authService.repo.GetSessionByUserID(userID)
+	// найти соответствующий refresh токен
+	session, err := authService.repo.GetSessionByUserID(claims.UserID)
 	if err != nil {
-		if errors.Is(sql.ErrNoRows, err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return "", "", apperrors.ErrUserNotFound
 		}
-		return "", "", apperrors.ErrCantUpdateTokens
+		return "", "", apperrors.ErrCantGetSession
+	}
+
+	// проверить userAgent
+	if userAgent != session.UserAgent {
+		if err = authService.repo.DeleteSessionByUserID(claims.UserID); err != nil {
+			return "", "", apperrors.ErrCantDeleteSession
+		}
+		// TODO
+		// подумать над деавторизацией пользователя
+		// нужно закидывать access токен в black-лист (redis) c ttl = ttlAccessToken
+	}
+
+	// проверить userIP
+	if userIP != session.IssuedIP {
+		go func() {
+			_, err := notifyWebhook(claims.UserID, session.IssuedIP, userIP, authService.webhookURL)
+			if err != nil {
+				log.Printf("can't notify webhook with error: %s\n", err.Error())
+			}
+		}()
 	}
 
 	// TODO
-	// подумать над деавторизацией пользователя
-	// нужно закидывать access токен в black-лист c ttl = ttlAccessToken
+	// тут тоже нужно старый access токен занести в black-list
+	newAccessToken, err := makeJWT(claims.UserID, authService.ttlAccessToken, authService.jwtSecretKey)
+	if err != nil {
+		return "", "", apperrors.ErrCantCreateTokens
+	}
 
+	newRefreshToken, err := makeTokenInBase64()
+	if err != nil {
+		return "", "", apperrors.ErrCantCreateTokens
+	}
+	newRefreshTokenHash, err := bcrypt.GenerateFromPassword([]byte(newRefreshToken), bcrypt.DefaultCost)
+	if err != nil {
+		return "", "", apperrors.ErrCantCreateTokens
+	}
+
+	if err = authService.repo.UpdateRefreshTokenByUserID(claims.UserID, newRefreshTokenHash); err != nil {
+		return "", "", apperrors.ErrCantUpdateTokens
+	}
+
+	return newAccessToken, newRefreshToken, nil
 }
