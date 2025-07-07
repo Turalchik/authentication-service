@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (authHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Request) {
+func (httpHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Request) {
 	userID := req.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "user_id required", http.StatusBadRequest)
@@ -15,7 +15,7 @@ func (authHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 	userAgent := req.UserAgent()
 	ipAddr, _ := getIP(req)
 
-	accessToken, refreshToken, err := authHandler.authService.CreateTokens(userID, userAgent, ipAddr)
+	accessToken, refreshToken, err := httpHandler.authService.CreateTokens(userID, userAgent, ipAddr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -34,9 +34,4 @@ func (authHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 	if _, err = w.Write(jsonBytes); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-}
-
-type tokensBody struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
 }

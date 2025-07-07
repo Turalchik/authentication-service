@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func (authService *AuthService) UpdateTokens(accessToken string, refreshToken string, userAgent string, ipAddr string) (string, string, error) {
+func (authService *AuthService) RefreshTokens(accessToken string, refreshToken string, userAgent string, ipAddr string) (string, string, error) {
 	// извлечь claims из access token
 	claims, err := claimsFromAccessToken(accessToken, authService.jwtSecretKey)
 	if err != nil {

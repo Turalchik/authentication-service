@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+type tokensBody struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 func getIP(r *http.Request) (string, error) {
 	ips := r.Header.Get("X-Forwarded-For")
 	splitIps := strings.Split(ips, ",")

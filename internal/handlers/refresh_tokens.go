@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (authHandler *HttpHandler) UpdateTokens(w http.ResponseWriter, req *http.Request) {
+func (httpHandler *HttpHandler) RefreshTokens(w http.ResponseWriter, req *http.Request) {
 	body := tokensBody{}
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %s", err.Error()), http.StatusBadRequest)
@@ -16,7 +16,7 @@ func (authHandler *HttpHandler) UpdateTokens(w http.ResponseWriter, req *http.Re
 	userAgent := req.UserAgent()
 	ipAddr, _ := getIP(req)
 
-	accessToken, refreshToken, err := authHandler.authService.UpdateTokens(body.AccessToken, body.RefreshToken, userAgent, ipAddr)
+	accessToken, refreshToken, err := httpHandler.authService.RefreshTokens(body.AccessToken, body.RefreshToken, userAgent, ipAddr)
 	if err != nil {
 		// TODO
 		// распарсить ошибки
