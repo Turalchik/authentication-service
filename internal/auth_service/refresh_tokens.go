@@ -31,7 +31,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 
 	// проверить userAgent
 	if userAgent != session.UserAgent {
-		if err = authService.Logout(accessToken); err != nil {
+		if err = authService.Logout(accessToken, claims.UserID); err != nil {
 			return "", "", err
 		}
 	}
