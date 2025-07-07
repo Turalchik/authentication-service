@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
 func (httpHandler *HttpHandler) RefreshTokens(w http.ResponseWriter, req *http.Request) {
-	body := tokensBody{}
+	body := accessAndRefreshTokensBody{}
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		http.Error(w, fmt.Sprintf("Invalid request body: %s", err.Error()), http.StatusBadRequest)
 		return
@@ -23,17 +24,15 @@ func (httpHandler *HttpHandler) RefreshTokens(w http.ResponseWriter, req *http.R
 		http.Error(w, fmt.Sprintf("Invalid request: %s", err.Error()), http.StatusBadRequest)
 	}
 
-	resp := tokensBody{
+	resp := &accessAndRefreshTokensBody{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = json.MarshalIndent(resp, "", "\t"); err != nil {
-		http.Error(w, fmt.Sprintf("Can't marshal response: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	if _, err = w.Write(jsonBytes); err != nil {
-		http.Error(w, fmt.Sprintf("Can't send response: %s", err.Error()), http.StatusInternalServerError)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("CreateTokens: failed to write response: %v", err)
 	}
 }

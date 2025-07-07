@@ -31,12 +31,9 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 
 	// проверить userAgent
 	if userAgent != session.UserAgent {
-		if err = authService.repo.DeleteSessionByUserID(claims.UserID); err != nil {
-			return "", "", apperrors.ErrCantDeleteSession
+		if err = authService.Logout(accessToken); err != nil {
+			return "", "", err
 		}
-		// TODO
-		// подумать над деавторизацией пользователя
-		// нужно закидывать access токен в black-лист (redis) c ttl = ttlAccessToken
 	}
 
 	// проверить userIP

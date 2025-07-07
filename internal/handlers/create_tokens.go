@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -21,17 +22,15 @@ func (httpHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 		return
 	}
 
-	resp := tokensBody{
+	resp := &accessAndRefreshTokensBody{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
 
-	var jsonBytes []byte
-	if jsonBytes, err = json.MarshalIndent(resp, "", "\t"); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if _, err = w.Write(jsonBytes); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err = json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("CreateTokens: failed to write response: %v", err)
 	}
 }

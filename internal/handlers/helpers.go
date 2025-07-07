@@ -7,9 +7,17 @@ import (
 	"strings"
 )
 
-type tokensBody struct {
+type accessTokenBody struct {
+	AccessToken string `json:"access_token"`
+}
+
+type accessAndRefreshTokensBody struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+}
+
+type userIDBody struct {
+	UserID string `json:"user_id"`
 }
 
 func getIP(r *http.Request) (string, error) {
