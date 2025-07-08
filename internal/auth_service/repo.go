@@ -6,5 +6,5 @@ type Repo interface {
 	GetSessionByUserID(userID string) (*sessions.Sessions, error)
 	CreateSession(session *sessions.Sessions) error
 	DeleteSessionByUserID(userID string) error
-	UpdateRefreshTokenByUserID(userID string, newRefreshTokenHash []byte) error
+	UpdateRefreshTokenByUserID(userID string, newRefreshTokenHash string) error
 }

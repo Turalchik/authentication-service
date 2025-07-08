@@ -62,7 +62,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 		return "", "", apperrors.ErrCantCreateTokens
 	}
 
-	if err = authService.repo.UpdateRefreshTokenByUserID(claims.UserID, newRefreshTokenHash); err != nil {
+	if err = authService.repo.UpdateRefreshTokenByUserID(claims.UserID, string(newRefreshTokenHash)); err != nil {
 		return "", "", apperrors.ErrCantUpdateTokens
 	}
 
