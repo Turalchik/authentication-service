@@ -17,4 +17,5 @@ var (
 	ErrTokensDontMatch   = errors.New("tokens don't match")
 	ErrCantBuildSQLQuery = errors.New("cant build sql query")
 	ErrCantExecSQLQuery  = errors.New("can't exec sql query")
+	ErrCantOpenDatabase  = errors.New("can't open database")
 )
