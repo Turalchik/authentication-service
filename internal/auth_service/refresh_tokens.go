@@ -1,7 +1,6 @@
 package auth_service
 
 import (
-	"database/sql"
 	"errors"
 	"github.com/Turalchik/authentication-service/internal/apperrors"
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +17,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 	// найти соответствующий refresh токен
 	session, err := authService.repo.GetSessionByUserID(claims.UserID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, apperrors.ErrUserNotFound) {
 			return "", "", apperrors.ErrUserNotFound
 		}
 		return "", "", apperrors.ErrCantGetSession

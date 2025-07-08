@@ -1,7 +1,6 @@
 package auth_service
 
 import (
-	"database/sql"
 	"errors"
 	"github.com/Turalchik/authentication-service/internal/apperrors"
 	"github.com/Turalchik/authentication-service/internal/entities/sessions"
@@ -19,7 +18,7 @@ func (authService *AuthService) CreateTokens(userID string, userAgent string, ip
 	}
 
 	// case when the user does not have a token yet
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, apperrors.ErrUserNotFound) {
 		// создаем токены (access и refresh)
 		accessToken, err := makeJWT(userID, authService.ttlAccessToken, authService.jwtSecretKey)
 		if err != nil {

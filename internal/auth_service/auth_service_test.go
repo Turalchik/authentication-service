@@ -1,7 +1,6 @@
 package auth_service
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 	"time"
@@ -26,7 +25,7 @@ func (m *mockRepo) CreateSession(session *sessions.Sessions) error {
 func (m *mockRepo) DeleteSessionByUserID(userID string) error {
 	return m.Called(userID).Error(0)
 }
-func (m *mockRepo) UpdateRefreshTokenByUserID(userID string, newRefreshTokenHash []byte) error {
+func (m *mockRepo) UpdateRefreshTokenByUserID(userID string, newRefreshTokenHash string) error {
 	return m.Called(userID, newRefreshTokenHash).Error(0)
 }
 
@@ -51,7 +50,7 @@ func TestAuthService_CreateTokens(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		repo.On("GetSessionByUserID", "u").Return((*sessions.Sessions)(nil), sql.ErrNoRows).Once()
+		repo.On("GetSessionByUserID", "u").Return((*sessions.Sessions)(nil), apperrors.ErrUserNotFound).Once()
 		repo.On("CreateSession", mock.AnythingOfType("*sessions.Sessions")).Return(nil).Once()
 		access, refresh, err := svc.CreateTokens("u", "ua", "ip")
 		assert.NoError(t, err)
@@ -93,7 +92,7 @@ func TestAuthService_RefreshTokens(t *testing.T) {
 	})
 
 	t.Run("user not found", func(t *testing.T) {
-		repo.On("GetSessionByUserID", "u").Return((*sessions.Sessions)(nil), sql.ErrNoRows).Once()
+		repo.On("GetSessionByUserID", "u").Return((*sessions.Sessions)(nil), apperrors.ErrUserNotFound).Once()
 		_, _, err := svc.RefreshTokens(access, "refresh", "ua", "ip")
 		assert.ErrorIs(t, err, apperrors.ErrUserNotFound)
 		repo.AssertExpectations(t)
