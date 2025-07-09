@@ -8,14 +8,13 @@ import (
 )
 
 func (authService *AuthService) RefreshTokens(accessToken string, refreshToken string, userAgent string, ipAddr string) (string, string, error) {
-	// извлечь claims из access token
-	claims, err := claimsFromAccessToken(accessToken, authService.jwtSecretKey)
+	userID, err := authService.CheckAccessTokenValidity(accessToken)
 	if err != nil {
 		return "", "", err
 	}
 
 	// найти соответствующий refresh токен
-	session, err := authService.repo.GetSessionByUserID(claims.UserID)
+	session, err := authService.repo.GetSessionByUserID(userID)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrUserNotFound) {
 			return "", "", apperrors.ErrUserNotFound
@@ -30,7 +29,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 
 	// проверить userAgent
 	if userAgent != session.UserAgent {
-		if err = authService.Logout(accessToken, claims.UserID); err != nil {
+		if err = authService.Logout(accessToken, userID); err != nil {
 			return "", "", err
 		}
 	}
@@ -38,7 +37,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 	// проверить userIP
 	if ipAddr != session.IPAddr {
 		go func() {
-			_, err := notifyWebhook(claims.UserID, session.IPAddr, ipAddr, authService.webhookURL)
+			_, err := notifyWebhook(userID, session.IPAddr, ipAddr, authService.webhookURL)
 			if err != nil {
 				log.Printf("can't notify webhook with error: %s\n", err.Error())
 			}
@@ -47,7 +46,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 
 	// TODO
 	// тут тоже нужно старый access токен занести в black-list
-	newAccessToken, err := makeJWT(claims.UserID, authService.ttlAccessToken, authService.jwtSecretKey)
+	newAccessToken, err := makeJWT(userID, authService.ttlAccessToken, authService.jwtSecretKey)
 	if err != nil {
 		return "", "", apperrors.ErrCantCreateTokens
 	}
@@ -61,7 +60,7 @@ func (authService *AuthService) RefreshTokens(accessToken string, refreshToken s
 		return "", "", apperrors.ErrCantCreateTokens
 	}
 
-	if err = authService.repo.UpdateRefreshTokenByUserID(claims.UserID, string(newRefreshTokenHash)); err != nil {
+	if err = authService.repo.UpdateRefreshTokenByUserID(userID, string(newRefreshTokenHash)); err != nil {
 		return "", "", apperrors.ErrCantUpdateTokens
 	}
 

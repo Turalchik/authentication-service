@@ -3,7 +3,8 @@ package auth_service
 import "time"
 
 type AuthService struct {
-	repo Repo
+	repo                 Repo
+	tokenRevocationStore TokenRevocationStore
 
 	ttlAccessToken time.Duration
 
@@ -11,11 +12,21 @@ type AuthService struct {
 	webhookURL   string
 }
 
-func NewAuthService(repo Repo, ttlAccessToken time.Duration, jwtSecretKey []byte, webhookURL string) *AuthService {
+func NewAuthService(
+
+	repo Repo,
+	ttlAccessToken time.Duration,
+	jwtSecretKey []byte,
+	webhookURL string,
+	tokenRevocationStore TokenRevocationStore,
+
+) *AuthService {
+
 	return &AuthService{
-		repo:           repo,
-		ttlAccessToken: ttlAccessToken,
-		jwtSecretKey:   jwtSecretKey,
-		webhookURL:     webhookURL,
+		repo:                 repo,
+		tokenRevocationStore: tokenRevocationStore,
+		ttlAccessToken:       ttlAccessToken,
+		jwtSecretKey:         jwtSecretKey,
+		webhookURL:           webhookURL,
 	}
 }
