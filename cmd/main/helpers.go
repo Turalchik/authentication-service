@@ -23,7 +23,7 @@ func GetConfigFromEnv() (*Config, error) {
 	webhookURL := os.Getenv("WEBHOOK_URL")
 
 	cfg := &Config{
-		TTLAccessToken: time.Duration(ttlAccessToken),
+		TTLAccessToken: time.Second * time.Duration(ttlAccessToken),
 		JWTSecretKey:   jwtSecretKey,
 		WebhookURL:     webhookURL,
 	}

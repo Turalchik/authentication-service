@@ -29,9 +29,8 @@ func main() {
 	authService := auth_service.NewAuthService(repository, cfg.TTLAccessToken, cfg.JWTSecretKey, cfg.WebhookURL)
 	handler := handlers.NewHttpHandler(authService)
 
-	// 3. Настройка сервера
 	server := &http.Server{
-		Addr:    ":8080", // Порт
+		Addr:    ":8080",
 		Handler: handler,
 	}
 
