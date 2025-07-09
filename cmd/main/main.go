@@ -12,6 +12,17 @@ import (
 	"net/http"
 )
 
+// @title Authentication Service
+// @version 1.0
+// @description Authentication Service with JWT tokens
+
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	cfg, err := GetConfigFromEnv()
 	if err != nil {

@@ -7,6 +7,17 @@ import (
 	"net/http"
 )
 
+// RefreshTokens обновляет пару токенов по существующему access + refresh.
+// @Summary      Обновление токенов
+// @Description  Принимает действующий access и refresh‑токены, возвращает новую пару.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      accessAndRefreshTokensBody  true  "Существующие access и refresh"
+// @Success      200   {object}  accessAndRefreshTokensBody
+// @Failure      400   {string}  string  "Invalid request body or tokens"
+// @Failure      401   {string}  string  "Unauthorized or token revoked"
+// @Router       /api/v1/auth/tokens/refresh [post]
 func (httpHandler *HttpHandler) RefreshTokens(w http.ResponseWriter, req *http.Request) {
 	body := accessAndRefreshTokensBody{}
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
@@ -21,7 +32,7 @@ func (httpHandler *HttpHandler) RefreshTokens(w http.ResponseWriter, req *http.R
 	if err != nil {
 		// TODO
 		// распарсить ошибки
-		http.Error(w, fmt.Sprintf("Invalid request: %s", err.Error()), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid request: %s", err.Error()), http.StatusUnauthorized)
 	}
 
 	resp := &accessAndRefreshTokensBody{

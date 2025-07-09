@@ -6,6 +6,17 @@ import (
 	"net/http"
 )
 
+// CreateTokens выдаёт новую пару токенов (access + refresh).
+// @Summary      Выдача токенов
+// @Description  Генерирует пару токенов для пользователя с указанным user_id в query‑параметре.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        user_id  query     string  true  "GUID пользователя"
+// @Success      200      {object}  accessAndRefreshTokensBody
+// @Failure      400      {string}  string  "user_id required"
+// @Failure      500      {string}  string  "internal server error"
+// @Router       /api/v1/auth/tokens [get]
 func (httpHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Request) {
 	userID := req.URL.Query().Get("user_id")
 	if userID == "" {

@@ -1,0 +1,129 @@
+basePath: /
+definitions:
+  handlers.accessAndRefreshTokensBody:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  handlers.userIDBody:
+    properties:
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Authentication Service with JWT tokens
+  title: Authentication Service
+  version: "1.0"
+paths:
+  /api/v1/auth/logout:
+    post:
+      description: Инвалидирует refresh‑токен текущего пользователя, после чего refresh
+        и protected‑маршруты недоступны.
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: invalid access token
+          schema:
+            type: string
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Выход пользователя (logout)
+      tags:
+      - auth
+  /api/v1/auth/me:
+    get:
+      description: Возвращает GUID пользователя, извлечённый из access token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.userIDBody'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Получение GUID текущего пользователя
+      tags:
+      - auth
+  /api/v1/auth/tokens:
+    get:
+      consumes:
+      - application/json
+      description: Генерирует пару токенов для пользователя с указанным user_id в
+        query‑параметре.
+      parameters:
+      - description: GUID пользователя
+        in: query
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.accessAndRefreshTokensBody'
+        "400":
+          description: user_id required
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Выдача токенов
+      tags:
+      - auth
+  /api/v1/auth/tokens/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Принимает действующий access и refresh‑токены, возвращает новую
+        пару.
+      parameters:
+      - description: Существующие access и refresh
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.accessAndRefreshTokensBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.accessAndRefreshTokensBody'
+        "400":
+          description: Invalid request body or tokens
+          schema:
+            type: string
+        "401":
+          description: Unauthorized or token revoked
+          schema:
+            type: string
+      summary: Обновление токенов
+      tags:
+      - auth
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -6,6 +6,15 @@ import (
 	"net/http"
 )
 
+// Guid возвращает GUID текущего пользователя.
+// @Summary      Получение GUID текущего пользователя
+// @Description  Возвращает GUID пользователя, извлечённый из access token.
+// @Tags         auth
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  userIDBody
+// @Failure      401  {string}  string  "unauthorized"
+// @Router       /api/v1/auth/me [get]
 func (httpHandler *HttpHandler) Guid(w http.ResponseWriter, req *http.Request) {
 	args := req.Context().Value("args").(map[string]string)
 
