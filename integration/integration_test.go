@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -59,7 +60,7 @@ func Test_AuthService_HappyPath(t *testing.T) {
 		"access_token":  tokens.AccessToken,
 		"refresh_token": tokens.RefreshToken,
 	})
-	resp, err = client.Post("http://localhost:8080/api/v1/auth/tokens/refresh", "application/json", bytes.NewReader(refreshBody))
+	resp, err = client.Post("http://localhost:8080/api/v1/auth/refresh", "application/json", bytes.NewReader(refreshBody))
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode)
 	body, _ = ioutil.ReadAll(resp.Body)
@@ -68,6 +69,7 @@ func Test_AuthService_HappyPath(t *testing.T) {
 	require.NoError(t, json.Unmarshal(body, &tokens2))
 	require.NotEmpty(t, tokens2.AccessToken)
 	require.NotEmpty(t, tokens2.RefreshToken)
+	fmt.Println("Access token for /guid:", tokens2.AccessToken)
 
 	// 3. Получить GUID
 	req, _ := http.NewRequest("GET", "http://localhost:8080/api/v1/auth/guid", nil)
@@ -89,7 +91,7 @@ func Test_AuthService_HappyPath(t *testing.T) {
 	require.Equal(t, 204, resp.StatusCode)
 	resp.Body.Close()
 
-	// 5. Попытка refresh после logout (должна быть ошибка)
+	// 5. Попытка refresh после logout
 	refreshBody, _ = json.Marshal(map[string]string{
 		"access_token":  tokens2.AccessToken,
 		"refresh_token": tokens2.RefreshToken,
@@ -97,5 +99,88 @@ func Test_AuthService_HappyPath(t *testing.T) {
 	resp, err = client.Post("http://localhost:8080/api/v1/auth/tokens/refresh", "application/json", bytes.NewReader(refreshBody))
 	require.NoError(t, err)
 	require.NotEqual(t, 200, resp.StatusCode)
+	resp.Body.Close()
+}
+
+func Test_AuthService_BlacklistScenarios(t *testing.T) {
+	waitForAPI(t, "http://localhost:8080/api/v1/unknown", 30*time.Second)
+
+	client := &http.Client{}
+	userID := "b7e6e1e2-8c2e-4e2a-9e2e-1e2e1e2e1e2e"
+
+	// 1. Получить токены
+	resp, err := client.Get("http://localhost:8080/api/v1/auth/tokens?user_id=" + userID)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode)
+	body, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	var tokens tokensResp
+	require.NoError(t, json.Unmarshal(body, &tokens))
+	require.NotEmpty(t, tokens.AccessToken)
+	require.NotEmpty(t, tokens.RefreshToken)
+
+	// 2. Logout (ревокация токена)
+	req, _ := http.NewRequest("POST", "http://localhost:8080/api/v1/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
+	resp, err = client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, 204, resp.StatusCode)
+	resp.Body.Close()
+
+	// 3. Попытка refresh после logout
+	refreshBody, _ := json.Marshal(map[string]string{
+		"access_token":  tokens.AccessToken,
+		"refresh_token": tokens.RefreshToken,
+	})
+	resp, err = client.Post("http://localhost:8080/api/v1/auth/refresh", "application/json", bytes.NewReader(refreshBody))
+	require.NoError(t, err)
+	require.NotEqual(t, 200, resp.StatusCode)
+	resp.Body.Close()
+
+	// 4. Попытка доступа к /guid с access token после logout
+	req, _ = http.NewRequest("GET", "http://localhost:8080/api/v1/auth/guid", nil)
+	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
+	resp, err = client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, 401, resp.StatusCode)
+	resp.Body.Close()
+
+	// 5. Повторный logout
+	req, _ = http.NewRequest("POST", "http://localhost:8080/api/v1/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
+	resp, err = client.Do(req)
+	require.NoError(t, err)
+	require.True(t, resp.StatusCode == 401 || resp.StatusCode == 400)
+	resp.Body.Close()
+
+	// 6. Получить новую пару токенов
+	resp, err = client.Get("http://localhost:8080/api/v1/auth/tokens?user_id=" + userID)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode)
+	body, _ = ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	var tokens3 tokensResp
+	require.NoError(t, json.Unmarshal(body, &tokens3))
+	require.NotEmpty(t, tokens3.AccessToken)
+	require.NotEmpty(t, tokens3.RefreshToken)
+
+	// 7. Попытка refresh с предыдущими (уже отозванными) токенами
+	refreshBody, _ = json.Marshal(map[string]string{
+		"access_token":  tokens.AccessToken,
+		"refresh_token": tokens.RefreshToken,
+	})
+	resp, err = client.Post("http://localhost:8080/api/v1/auth/refresh", "application/json", bytes.NewReader(refreshBody))
+	require.NoError(t, err)
+	require.NotEqual(t, 200, resp.StatusCode)
+	resp.Body.Close()
+
+	// 8. Попытка refresh с новыми токенами
+	refreshBody, _ = json.Marshal(map[string]string{
+		"access_token":  tokens3.AccessToken,
+		"refresh_token": tokens3.RefreshToken,
+	})
+	resp, err = client.Post("http://localhost:8080/api/v1/auth/refresh", "application/json", bytes.NewReader(refreshBody))
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode)
 	resp.Body.Close()
 }

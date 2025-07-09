@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/Turalchik/authentication-service/internal/apperrors"
 	"log"
 	"net/http"
 )
@@ -30,6 +32,10 @@ func (httpHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 
 	accessToken, refreshToken, err := httpHandler.authService.CreateTokens(userID, userAgent, ipAddr)
 	if err != nil {
+		if errors.Is(err, apperrors.ErrUserAlreadyExists) {
+			http.Error(w, "user already exist", http.StatusConflict)
+			return
+		}
 		http.Error(w, fmt.Sprintf("can't create tokens with error: %v", err), http.StatusInternalServerError)
 		return
 	}
