@@ -15,10 +15,10 @@ type AuthService struct {
 func NewAuthService(
 
 	repo Repo,
+	tokenRevocationStore TokenRevocationStore,
 	ttlAccessToken time.Duration,
 	jwtSecretKey []byte,
 	webhookURL string,
-	tokenRevocationStore TokenRevocationStore,
 
 ) *AuthService {
 

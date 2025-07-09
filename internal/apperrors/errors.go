@@ -20,4 +20,5 @@ var (
 	ErrCantOpenDatabase         = errors.New("can't open database")
 	ErrCantCheckRevocationToken = errors.New("can't verify the revocation of the token")
 	ErrCantRevokeToken          = errors.New("can't revoke token")
+	ErrRedisPingFailed          = errors.New("redis ping failed")
 )

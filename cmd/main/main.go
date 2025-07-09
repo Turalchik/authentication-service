@@ -4,7 +4,9 @@ import (
 	"github.com/Turalchik/authentication-service/internal/auth_service"
 	"github.com/Turalchik/authentication-service/internal/database"
 	"github.com/Turalchik/authentication-service/internal/handlers"
+	"github.com/Turalchik/authentication-service/internal/redisdb"
 	"github.com/Turalchik/authentication-service/internal/repo"
+	"github.com/Turalchik/authentication-service/internal/token_revocation_store"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"log"
@@ -24,9 +26,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Can't create database: %v", err)
 	}
+	redisClient, err := redisdb.NewRedisClient(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
+	if err != nil {
+		log.Fatalf("Can't create redis client: %v", err)
+	}
 
 	repository := repo.NewRepo(db)
-	authService := auth_service.NewAuthService(repository, cfg.TTLAccessToken, cfg.JWTSecretKey, cfg.WebhookURL)
+	revocationStore := token_revocation_store.NewTokenRevocationStore(redisClient, "")
+	authService := auth_service.NewAuthService(repository, revocationStore, cfg.TTLAccessToken, cfg.JWTSecretKey, cfg.WebhookURL)
 	handler := handlers.NewHttpHandler(authService)
 
 	server := &http.Server{

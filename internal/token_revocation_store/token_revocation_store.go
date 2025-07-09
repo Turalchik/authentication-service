@@ -9,14 +9,9 @@ type TokenRevocationStore struct {
 	keyPrefix string
 }
 
-func NewTokenRevocationStore(addr, password string, db int, keyPrefix string) *TokenRevocationStore {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
-	})
+func NewTokenRevocationStore(client *redis.Client, keyPrefix string) *TokenRevocationStore {
 	return &TokenRevocationStore{
-		client:    rdb,
+		client:    client,
 		keyPrefix: keyPrefix,
 	}
 }
