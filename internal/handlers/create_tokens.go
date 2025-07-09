@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -29,7 +30,7 @@ func (httpHandler *HttpHandler) CreateTokens(w http.ResponseWriter, req *http.Re
 
 	accessToken, refreshToken, err := httpHandler.authService.CreateTokens(userID, userAgent, ipAddr)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("can't create tokens with error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
