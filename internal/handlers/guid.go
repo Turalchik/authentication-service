@@ -14,7 +14,7 @@ import (
 // @Security     ApiKeyAuth
 // @Success      200  {object}  userIDBody
 // @Failure      401  {string}  string  "unauthorized"
-// @Router       /api/v1/auth/me [get]
+// @Router       /api/v1/auth/guid [get]
 func (httpHandler *HttpHandler) Guid(w http.ResponseWriter, req *http.Request) {
 	args := req.Context().Value("args").(map[string]string)
 

@@ -19,6 +19,25 @@ info:
   title: Authentication Service
   version: "1.0"
 paths:
+  /api/v1/auth/guid:
+    get:
+      description: Возвращает GUID пользователя, извлечённый из access token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.userIDBody'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Получение GUID текущего пользователя
+      tags:
+      - auth
   /api/v1/auth/logout:
     post:
       description: Инвалидирует refresh‑токен текущего пользователя, после чего refresh
@@ -39,25 +58,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Выход пользователя (logout)
-      tags:
-      - auth
-  /api/v1/auth/me:
-    get:
-      description: Возвращает GUID пользователя, извлечённый из access token.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handlers.userIDBody'
-        "401":
-          description: unauthorized
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Получение GUID текущего пользователя
       tags:
       - auth
   /api/v1/auth/tokens:

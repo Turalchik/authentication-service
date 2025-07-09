@@ -1,112 +1,77 @@
-## Тестовое задание: Junior Backend Developer
+# Authentication Service
 
-### Описание
+Микросервис для аутентификации пользователей с поддержкой JWT, refresh-токенов, хранения сессий в Postgres и ревокации access-токенов через Redis. Есть Swagger-документация, миграции, тесты, docker-compose для локального запуска.
 
-Данный проект представляет собой часть сервиса аутентификации, реализованную на языке Go с использованием PostgreSQL и контейнеризации через Docker. Основная цель — предоставить четыре конечные точки API для управления токенами и сеансами пользователя.
+## Стек
+- Go 1.21+
+- PostgreSQL 15+
+- Redis 7+
+- Docker, docker-compose
+- Swagger (swaggo)
+- sqlx, squirrel, bcrypt
+- Тесты: testify, sqlmock
 
-### Используемые технологии
-
-* **Язык программирования:** Go
-* **База данных:** PostgreSQL
-* **Контейнеризация:** Docker, Docker Compose
-
-### Предварительные требования
-
-Перед началом работы убедитесь, что у вас установлены:
-
-* Docker (версия 19.03 или выше)
-* Docker Compose (версия 1.25 или выше)
-* Git (для клонирования репозитория)
-
-### Установка и запуск
-
-1. Клонируйте репозиторий:
-
-   ```bash
-   git clone <URL_вашего_репозитория>.git
-   cd <имя_папки_репозитория>
-   ```
-2. При необходимости отредактируйте параметры подключения в файле `.env` (используются значения по умолчанию, прилагаемые к проекту).
-3. Запустите сервис и базу данных одной командой:
-
-   ```bash
-   docker-compose -f docker-compose.yml up -d
-   ```
-
-Сервис будет доступен по адресу `http://localhost:8080` (порт может быть изменён в конфигурации).
-
-### Конфигурация
-
-* Файл `.env` содержит следующие параметры:
-
-  ```dotenv
-  DB_HOST=postgres
-  DB_PORT=5432
-  DB_USER=postgres
-  DB_PASSWORD=postgres
-  DB_NAME=auth_service
-  JWT_SECRET=<ваш_секрет>
-  WEBHOOK_URL=<URL_для_уведомлений>
-  ```
-
-### Описание API
-
-Все запросы и ответы описаны в Swagger-документации, доступной по пути `/swagger/index.html` после запуска сервиса.
-
-#### 1. Получение пары токенов
-
-* **Метод:** GET
-* **Маршрут:** `/api/v1/auth/tokens?user_id={GUID}`
-* **Параметры:**
-
-   * `user_id` (GUID) — идентификатор пользователя
-* **Успешный ответ:** пара токенов `access` и `refresh`.
-
-#### 2. Обновление пары токенов
-
-* **Метод:** POST
-* **Маршрут:** `/api/v1/auth/refresh`
-* **Тело запроса:** JSON с полями `access_token` и `refresh_token`.
-* **Логика защиты:**
-
-   * Проверка соответствия пары токенов
-   * Запрет при изменении User-Agent (после неудачной попытки — деавторизация)
-   * Отправка уведомления на webhook при новом IP
-* **Успешный ответ:** новая пара токенов.
-
-#### 3. Получение GUID текущего пользователя
-
-* **Метод:** GET
-* **Маршрут:** `/api/v1/auth/guid`
-* **Защита:** требуется валидный `access_token` в заголовке `Authorization: Bearer {token}`.
-* **Успешный ответ:** текущий `user_id` (GUID).
-
-#### 4. Деавторизация пользователя
-
-* **Метод:** POST
-* **Маршрут:** `/api/v1/auth/logout`
-* **Защита:** требуется валидный `access_token` в заголовке `Authorization: Bearer {token}`.
-* **Описание:** при выполнении токен аннулируется, дальнейшие запросы по этому `access_token` и соответствующему `refresh_token` будут отклонены.
-
-### Требования к токенам
-
-* **Access token:**
-
-   * Формат: JWT
-   * Алгоритм подписи: SHA512
-   * Хранение токена в базе данных запрещено
-* **Refresh token:**
-
-   * Формат: произвольный, передача — Base64
-   * Хранение в базе — bcrypt-хеш
-   * Защита от повторного использования и изменений на стороне клиента
-
-### Swagger-документация
-
-После запуска сервиса откройте в браузере:
+## Переменные окружения (пример .env)
+Для запуска приложения нужно создать файл .env в котором будет указано, например, следующее
 
 ```
-http://localhost:8080/swagger/index.html
+POSTGRES_DB=auth_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=13
+DB_HOST=db
+DB_PORT=5432
+DB_USER=authuser
+DB_PASSWORD=authpass
+DB_NAME=authdb
+REDIS_ADDR=redis:6379
+REDIS_PASSWORD=
+REDIS_DB=0
+TTL_ACCESS_TOKEN=3600 # в секундах
+JWT_SECRET_KEY=supersecretkey
+WEBHOOK_URL=http://example.com/webhook
 ```
 
-Здесь приведены примеры запросов, схемы ошибок и описания всех API-эндпоинтов.
+## Быстрый старт
+
+```bash
+git clone <REPO_URL>
+cd authentication-service
+docker-compose up --build
+```
+
+
+## Архитектура
+- **Postgres**: хранит сессии (user_id, refresh_token_hash, user_agent, ip_addr)
+- **Redis**: хранит revoked access-токены (blacklist)
+- **Swagger**: автогенерируется из Go-комментариев
+- **Миграции**: в internal/migrations, применяются через migrate/migrate
+
+## Основные эндпоинты
+
+- `GET /api/v1/auth/tokens?user_id=...` — получить пару access/refresh токенов
+- `POST /api/v1/auth/tokens/refresh` — обновить пару токенов (тело: {access_token, refresh_token})
+- `GET /api/v1/auth/guid` — получить user_id из access_token (требует Authorization)
+- `POST /api/v1/auth/logout` — разлогинить пользователя (требует Authorization)
+
+**Полное описание и схемы ошибок — в Swagger!**
+
+## Токены
+- **Access**: JWT (HS512), не хранится в БД, revocation через Redis
+- **Refresh**: случайная строка, хранится в БД только bcrypt-хеш
+
+
+## Миграции
+Миграции лежат в internal/migrations. Применяются автоматически через сервис `migrate` в docker-compose.
+
+## Тесты
+
+```bash
+go test ./...
+```
+Покрытие: сервисная логика, repo, handlers (моки через testify/sqlmock).
+
+## Swagger
+
+- Автогенерируется через swaggo (см. internal/handlers/*)
+- После запуска: http://localhost:8080/swagger/index.html
+
