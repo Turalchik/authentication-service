@@ -8,14 +8,11 @@ import (
 	"github.com/Turalchik/authentication-service/internal/repo"
 	"github.com/Turalchik/authentication-service/internal/token_revocation_store"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 )
 
 func main() {
-	godotenv.Load()
-
 	cfg, err := GetConfigFromEnv()
 	if err != nil {
 		log.Fatalf("can't load variables from environment with error: %v", err)
